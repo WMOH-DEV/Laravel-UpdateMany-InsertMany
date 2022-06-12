@@ -191,7 +191,7 @@ class UpdateMany
         $cases = [];
         foreach ($rows as $row) {
             // Check if the row has the column
-            if (array_key_exists($column, $row)) {
+            if (is_array($row) ? array_key_exists($column, $row) : isset($row->$column)) {
                 $value = addslashes($row[$column]);
 
                 // Set null in mysql database
