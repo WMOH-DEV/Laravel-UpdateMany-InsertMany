@@ -1,0 +1,28 @@
+{
+    "name": "waelmoh/laravel-update-many",
+    "description": "Laravel Batch update collection of models",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "WaelMoh\\LaravelUpdateMany\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Wael M.ElSaid",
+            "email": "wmoh.mail@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=8.0.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WaelMoh\\LaravelUpdateMany\\UpdateManyServiceProvider"
+            ]
+        }
+    }
+}
