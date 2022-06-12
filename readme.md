@@ -2,7 +2,7 @@
 
 Laravel batch update a collection of eloquent models.
 Perform single query for batch update collection of models.
-It will also update `created_at` and `updated_at` column of the models
+It will also update `updated_at` column of the models
 
 ## Installation
 
