@@ -22,20 +22,20 @@ This updates the `updated_at` column of the models and the tables.
 ```php
 $users = [
    [
-      'id'         => 426,
+      'id'         => 31,
       'first_name' => 'John',
       'last_name'  => 'Doe',
       'email'      => 'John@Doe.com'
 
    ],
    [
-      'id'         => 427,
+      'id'         => 32,
       'first_name' => 'Hubert',
       'last_name'  => 'Wiza',
       'email'      => 'Hubert@Wiza.org'
    ],
    [
-      'id'         => 428,
+      'id'         => 33,
       'first_name' => 'Mikayla',
       'last_name'  => 'Keeling',
       'email'      => 'Mikayla.hyatt@example.com'
