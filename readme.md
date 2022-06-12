@@ -1,7 +1,7 @@
 # Laravel Update Many
 
 Laravel batch update a collection of eloquent models.
-Perform single query for batch update collection or arrays.
+Perform single query for batch update collection of models.
 It will also update `created_at` and `updated_at` column of the models
 
 ## Installation
@@ -14,7 +14,7 @@ composer require waelmoh/laravel-update-many
 
 ### Update Many
 
-Update array or collection of models. This perform a single update query for all the passed models.
+Update collection of models. This perform a single update query for all the passed models. Accepts an array of arrays or collection. Each array|object should contain the model key and the data to update. The key can be any column, by default it is `id`.
 Only the dirty or changed attributes will be included in the update.
 This updates the `updated_at` column of the models and the tables.
 
