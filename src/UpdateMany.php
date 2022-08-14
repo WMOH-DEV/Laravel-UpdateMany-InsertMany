@@ -3,6 +3,7 @@
 namespace WaelMoh\LaravelUpdateMany;
 
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use function collect;
@@ -12,7 +13,7 @@ use function now;
 class UpdateMany
 {
     protected string $table;
-    protected string $key    = 'id';
+    protected string|array $key = 'id';
     protected array $columns = [];
     protected string $updatedAtColumn;
 
@@ -20,11 +21,11 @@ class UpdateMany
      * Construct and pass rows for multiple update.
      *
      * @param string $table
-     * @param string $key
+     * @param string|array $key
      * @param array $columns
      * @param string $updatedAtColumn
      */
-    public function __construct(string $table, string $key = 'id', array $columns = [], string $updatedAtColumn = 'updated_at')
+    public function __construct(string $table, string|array $key = 'id', array $columns = [], string $updatedAtColumn = 'updated_at')
     {
         $this->table           = $table;
         $this->key             = $key;
@@ -71,12 +72,13 @@ class UpdateMany
     /**
      * Execute update statement on the given rows.
      *
-     * @param  array|collection $rows
+     * @param array|Collection|SupportCollection $rows
      * @return void
      */
-    public function update(array|collection $rows)
+    public function update(array|collection|supportCollection $rows): void
     {
         if (collect($rows)->isEmpty()) {
+
             return;
         }
 
@@ -85,22 +87,40 @@ class UpdateMany
         }
 
         if ($this->updatedAtColumn) {
-            $ts = now();
-            foreach ($rows as $row) {
-                $row[$this->updatedAtColumn] = $ts;
-            }
+
+            $rows = $this->setUpdatedAtColumn(is_array($rows) ? $rows : $rows->toArray());
         }
 
         DB::statement($this->updateSql($rows));
     }
 
     /**
+     * @param array $rows
+     * @return array|SupportCollection
+     */
+    protected function setUpdatedAtColumn(array $rows): array|supportCollection
+    {
+
+        if ($this->updatedAtColumn) {
+
+            $rows = collect($rows)->map(function (array $row) {
+
+                $row[$this->updatedAtColumn] = now();
+
+                return $row;
+            });
+        }
+        return $rows;
+    }
+
+
+    /**
      * Get columns from rows.
      *
-     * @param  array|collection $rows
+     * @param array|Collection|SupportCollection $rows
      * @return array
      */
-    protected function getColumnsFromRows(array|collection $rows): array
+    protected function getColumnsFromRows(array|collection|supportCollection $rows): array
     {
         $row = [];
 
@@ -132,35 +152,35 @@ class UpdateMany
     /**
      * Return the update sql.
      *
-     * @param  array|collection $rows
+     * @param array|SupportCollection $rows
      * @return string
      */
-    protected function updateSql(array|collection $rows): string
+    protected function updateSql(array|supportCollection $rows): string
     {
         $updateColumns = implode(', ', $this->updateColumns($rows));
         $whereInKeys   = implode(', ', $this->whereInKeys($rows));
 
-        return "UPDATE `{$this->table}` SET {$updateColumns} where `{$this->key}` in ({$whereInKeys})";
+        return "UPDATE `{$this->table}` SET {$updateColumns}" . (is_array($this->key) ? " WHERE {$this->key[0]} IN ({$whereInKeys})" : " WHERE {$this->key} IN ({$whereInKeys})");
     }
 
     /**
      * Return the where in keys.
      *
-     * @param  array|collection $rows
+     * @param array|SupportCollection $rows
      * @return array
      */
-    protected function whereInKeys(array|collection $rows): array
+    protected function whereInKeys(array|supportCollection $rows): array
     {
-        return collect($rows)->pluck($this->key)->all();
+        return collect($rows)->pluck(is_array($this->key) ? $this->key[0] : $this->key)->all();
     }
 
     /**
      * Return the update columns.
      *
-     * @param  array|collection $rows
+     * @param array|SupportCollection $rows
      * @return array
      */
-    protected function updateColumns(array|collection $rows): array
+    protected function updateColumns(array|supportCollection $rows): array
     {
         $updates = [];
 
@@ -182,16 +202,17 @@ class UpdateMany
     /**
      * Return an array of column cases.
      *
-     * @param  string $column
-     * @param  array|collection $rows
+     * @param string $column
+     * @param array|SupportCollection $rows
      * @return array
      */
-    protected function cases(string $column, array|collection $rows): array
+    protected function cases(string $column, array|supportCollection $rows): array
     {
         $cases = [];
         foreach ($rows as $row) {
             // Check if the row has the column
-            if (is_array($row) ? array_key_exists($column, $row) : isset($row->$column)) {
+            if (is_array($row) ? array_key_exists($column, $row) : isset($row->{$column})) {
+
                 $value = addslashes($row[$column]);
 
                 // Set null in mysql database
@@ -202,7 +223,25 @@ class UpdateMany
                 }
 
                 if ($this->includeCase($row, $column)) {
-                    $cases[] = "WHEN `{$this->key}` = '{$row[$this->key]}' THEN {$value}";
+
+                    if (is_array($this->key)) {
+
+                        foreach ($this->key as $index => $key) {
+
+                            if (array_key_first($this->key) === $index) {
+
+                                $cases[] = "WHEN `{$key}` = '{$row[$key]}'";
+                            } elseif (array_key_last($this->key) === $index) {
+
+                                $cases[] = " AND `{$key}` = '{$row[$key]}' THEN {$value}";
+                            } else {
+
+                                $cases[] = " AND `{$key}` = '{$row[$key]}'";
+                            }
+                        }
+                    } else {
+                        $cases[] = "WHEN `{$this->key}` = '{$row[$this->key]}' THEN {$value}";
+                    }
                 }
             }
         }

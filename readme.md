@@ -14,10 +14,10 @@ composer require waelmoh/laravel-update-many
 
 ### Update Many
 
-Update collection of models. This perform a single update query for all the passed models. Accepts an array of arrays or collection. Each array|object should contain the model key and the data to update. The key can be any column, by default it is `id`.
+Update collection of models. This perform a single update query for all the passed models. Accepts an array of arrays or collection. Each array|object should contain the model key and the data to update. The key can be any column, by default it is `id`. Also key can be an array of columns.
+
 Only the dirty or changed attributes will be included in the update.
 This updates the `updated_at` column of the models and the tables.
-
 
 ```php
 $users = [
@@ -48,6 +48,8 @@ $users = [
 User::updateMany($users); // update many models using id as the default key
 User::updateMany($users, 'id'); // same as above
 User::updateMany($users, 'username'); // use username as key instead of id
+User::updateMany($users, ['username', 'email']); // use username and email as keys instead of id
+User::updateMany($users, ['username', 'email'], ['last_name']); // update last name if username and email match
 
 ```
 
@@ -122,7 +124,6 @@ WHERE
       31, 32, 33
    );
 ```
-
 
 #### Rights
 
