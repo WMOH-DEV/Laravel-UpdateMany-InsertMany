@@ -5,7 +5,7 @@
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "WaelMoh\\LaravelUpdateMany\\": "src/"
+            "WaelMoh\\LaravelUpdateInsertMany\\": "src/"
         }
     },
     "authors": [
@@ -21,7 +21,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "WaelMoh\\LaravelUpdateMany\\UpdateManyServiceProvider"
+                "WaelMoh\\LaravelUpdateInsertMany\\ServiceProvider"
             ]
         }
     }
