@@ -1,6 +1,6 @@
 <?php
 
-namespace WaelMoh\LaravelUpdateMany;
+namespace WaelMoh\LaravelUpdateInsertMany;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Collection as SupportCollection;
@@ -94,7 +94,7 @@ class UpdateMany
 
         $rows = is_array($rows) ? collect($rows) : $rows;
 
-        return $rows->chunk(999)->every(fn($chunk) => DB::statement($this->updateSql($chunk)));
+        return $rows->chunk(999)->every(fn ($chunk) => DB::statement($this->updateSql($chunk)));
     }
 
     /**
@@ -107,8 +107,8 @@ class UpdateMany
             $rows = collect($rows)->map(function ($row) {
                 is_array($row)
                     //Due to MySql Strict, Invalid datetime format may occur, so we're parsing the date to avoid any invalid format.
-                  ? $row[$this->updatedAtColumn] = (array_key_exists($this->updatedAtColumn, $row) ? Carbon::parse($row[$this->updatedAtColumn]) : now())
-                  : $row->{$this->updatedAtColumn} ??= now();
+                    ? $row[$this->updatedAtColumn] = (array_key_exists($this->updatedAtColumn, $row) ? Carbon::parse($row[$this->updatedAtColumn]) : now())
+                    : $row->{$this->updatedAtColumn} ??= now();
 
                 return $row;
             });
@@ -196,9 +196,9 @@ class UpdateMany
             }
 
             $updates[] = " `{$column}` = " .
-              ' CASE ' .
-              implode(' ', $cases) .
-              " ELSE `{$column}` END";
+                ' CASE ' .
+                implode(' ', $cases) .
+                " ELSE `{$column}` END";
         }
         return $updates;
     }

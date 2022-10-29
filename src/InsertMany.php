@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Queries;
+namespace WaelMoh\LaravelUpdateInsertMany;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
