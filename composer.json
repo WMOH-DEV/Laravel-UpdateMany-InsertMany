@@ -1,11 +1,11 @@
 {
-    "name": "waelmoh/laravel-update-many",
-    "description": "Laravel Batch update collection of models",
+    "name": "waelmoh/laravel-update-insert-many",
+    "description": "Laravel Batch insert or batch update collection of models",
     "type": "library",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "WaelMoh\\LaravelUpdateMany\\": "src/"
+            "WaelMoh\\LaravelUpdateInsertMany\\": "src/"
         }
     },
     "authors": [
@@ -21,7 +21,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "WaelMoh\\LaravelUpdateMany\\UpdateManyServiceProvider"
+                "WaelMoh\\LaravelUpdateInsertMany\\ServiceProvider"
             ]
         }
     }
