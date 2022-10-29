@@ -5,6 +5,7 @@ namespace WaelMoh\LaravelUpdateMany;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use function collect;
 use function now;
@@ -27,16 +28,16 @@ class UpdateMany
      */
     public function __construct(string $table, string|array $key = 'id', array $columns = [], string $updatedAtColumn = 'updated_at')
     {
-        $this->table           = $table;
-        $this->key             = $key;
-        $this->columns         = $columns;
+        $this->table = $table;
+        $this->key = $key;
+        $this->columns = $columns;
         $this->updatedAtColumn = $updatedAtColumn;
     }
 
     /**
      * Set the key.
      *
-     * @param  string  $key
+     * @param string $key
      * @return $this
      */
     public function key(string $key): static
@@ -48,7 +49,7 @@ class UpdateMany
     /**
      * Set the columns to update.
      *
-     * @param  array  $columns
+     * @param array $columns
      * @return $this
      */
     public function columns(array $columns): static
@@ -60,7 +61,7 @@ class UpdateMany
     /**
      * Set updated_at column.
      *
-     * @param  string $updatedAtColumn
+     * @param string $updatedAtColumn
      * @return $this
      */
     public function updatedAtColumn(string $updatedAtColumn): static
@@ -73,13 +74,13 @@ class UpdateMany
      * Execute update statement on the given rows.
      *
      * @param array|Collection|SupportCollection $rows
-     * @return void
+     * @return bool
      */
-    public function update(array|collection|supportCollection $rows): void
+    public function update(array|collection|supportCollection $rows): bool
     {
         if (collect($rows)->isEmpty()) {
 
-            return;
+            return false;
         }
 
         if (empty($this->columns)) {
@@ -91,7 +92,9 @@ class UpdateMany
             $rows = $this->setUpdatedAtColumn(is_array($rows) ? $rows : $rows->toArray());
         }
 
-        DB::statement($this->updateSql($rows));
+        $rows = is_array($rows) ? collect($rows) : $rows;
+
+        return $rows->chunk(999)->every(fn($chunk) => DB::statement($this->updateSql($chunk)));
     }
 
     /**
@@ -100,16 +103,17 @@ class UpdateMany
      */
     protected function setUpdatedAtColumn(array $rows): array|supportCollection
     {
-
         if ($this->updatedAtColumn) {
-
-            $rows = collect($rows)->map(function (array $row) {
-
-                $row[$this->updatedAtColumn] = now();
+            $rows = collect($rows)->map(function ($row) {
+                is_array($row)
+                    //Due to MySql Strict, Invalid datetime format may occur, so we're parsing the date to avoid any invalid format.
+                  ? $row[$this->updatedAtColumn] = (array_key_exists($this->updatedAtColumn, $row) ? Carbon::parse($row[$this->updatedAtColumn]) : now())
+                  : $row->{$this->updatedAtColumn} ??= now();
 
                 return $row;
             });
         }
+
         return $rows;
     }
 
@@ -158,9 +162,9 @@ class UpdateMany
     protected function updateSql(array|supportCollection $rows): string
     {
         $updateColumns = implode(', ', $this->updateColumns($rows));
-        $whereInKeys   = implode(', ', $this->whereInKeys($rows));
+        $whereInKeys = implode("','", $this->whereInKeys($rows));
 
-        return "UPDATE `{$this->table}` SET {$updateColumns}" . (is_array($this->key) ? " WHERE {$this->key[0]} IN ({$whereInKeys})" : " WHERE {$this->key} IN ({$whereInKeys})");
+        return "UPDATE `{$this->table}` SET {$updateColumns}" . (is_array($this->key) ? " WHERE `{$this->key[0]}` IN ('{$whereInKeys}')" : " WHERE `{$this->key}` IN ('{$whereInKeys}')");
     }
 
     /**
@@ -171,7 +175,7 @@ class UpdateMany
      */
     protected function whereInKeys(array|supportCollection $rows): array
     {
-        return collect($rows)->pluck(is_array($this->key) ? $this->key[0] : $this->key)->all();
+        return array_unique(collect($rows)->pluck(is_array($this->key) ? $this->key[0] : $this->key)->all());
     }
 
     /**
@@ -192,9 +196,9 @@ class UpdateMany
             }
 
             $updates[] = " `{$column}` = " .
-                ' CASE ' .
-                implode(' ', $cases) .
-                " ELSE `{$column}` END";
+              ' CASE ' .
+              implode(' ', $cases) .
+              " ELSE `{$column}` END";
         }
         return $updates;
     }
@@ -210,10 +214,14 @@ class UpdateMany
     {
         $cases = [];
         foreach ($rows as $row) {
+            $row = is_array($row) ? $row : ($row instanceof Model ? $row : get_object_vars($row));
+
             // Check if the row has the column
             if (is_array($row) ? array_key_exists($column, $row) : isset($row->{$column})) {
 
-                $value = addslashes($row[$column]);
+                $row[$column] = is_array($row[$column]) ? json_encode($row[$column]) : $row[$column];
+
+                $value = addslashes($row[$column] ?? '');
 
                 // Set null in mysql database
                 if (is_null($row[$column])) {
@@ -223,19 +231,13 @@ class UpdateMany
                 }
 
                 if ($this->includeCase($row, $column)) {
-
                     if (is_array($this->key)) {
-
                         foreach ($this->key as $index => $key) {
-
                             if (array_key_first($this->key) === $index) {
-
                                 $cases[] = "WHEN `{$key}` = '{$row[$key]}'";
                             } elseif (array_key_last($this->key) === $index) {
-
                                 $cases[] = " AND `{$key}` = '{$row[$key]}' THEN {$value}";
                             } else {
-
                                 $cases[] = " AND `{$key}` = '{$row[$key]}'";
                             }
                         }
@@ -245,6 +247,7 @@ class UpdateMany
                 }
             }
         }
+
         return $cases;
     }
 
