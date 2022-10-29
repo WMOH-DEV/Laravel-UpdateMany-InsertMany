@@ -7,7 +7,7 @@ It will also update `updated_at` column of the models
 ## Installation
 
 ```
-composer require waelmoh/laravel-update-many
+composer require waelmoh/laravel-update-insert-many
 ```
 
 ## Usage
