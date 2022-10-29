@@ -38,23 +38,21 @@ class ServiceProvider extends BaseServiceProvider
         |--------------------------------------------------------------------------
         |
         | Unlike normal insert, InsertMany accepts collection of models or array of arrays.
-        | It will insert the timestamps and createdBy, updatedBy as well.
-        | Still it's an optional to update both of them by passing boolean value
-        | ! By default, CreatedBy and UpdatedBy won't be inserted.
-        | If the output parameter is ture The query will return a support collection of the inserted data depending on the primary key
-        | which by default is [ID], so if you have a different key name, PASS IT with the parameters
+        | It will insert the timestamps.still it's an optional by passing boolean value
+        | If the output parameter is ture The query will return a support collection 
+        | of the inserted data depending on the primary key which by default is [ID],
+        | so if you have a different key name, PASS IT with the parameters
         |
         */
-        Builder::macro('insertMany', fn ($rows, $createdUpdatedBy = false, $output = false, $key = 'id', $timestamps = true) => (new InsertMany(
+        Builder::macro('insertMany', fn ($rows, $output = false, $key = 'id', $timestamps = true) => (new InsertMany(
             $this,
-            $createdUpdatedBy,
             $output,
             $key,
             $timestamps,
         ))->insert($rows));
 
-        EloquentBuilder::macro('insertMany', function ($rows, $createdUpdatedBy = false, $output = false, $key = 'id', $timestamps = true) {
-            return $this->newQuery()->insertMany($rows, $createdUpdatedBy, $output, $key, $timestamps);
+        EloquentBuilder::macro('insertMany', function ($rows, $output = false, $key = 'id', $timestamps = true) {
+            return $this->getQuery()->insertMany($rows, $output, $key, $timestamps);
         });
     }
 }
